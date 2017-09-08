@@ -1,0 +1,67 @@
+#import the tools we need for datetime formatting, plotting, and creating ARIMA model
+import pandas as pd
+import numpy as np
+import patsy as pt
+from statsmodels.tsa.arima_model import ARIMA
+import statsmodels.tsa.stattools as st
+from bokeh.plotting import figure, show
+from datetime import datetime
+
+#import data
+data = pd.read_csv("C:\\Users\\Emily\\Desktop\\omahaNOAA.csv")[-(365*24):]
+
+
+
+
+#ASK what these 3 lines mean
+data['DATE'] = data['DATE'].apply(lambda x:
+                           datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
+data = data.dropna()
+data.index = data['DATE']
+
+#0908 remove 0 values from data
+data = data[data.HOURLYWETBULBTEMPC!=0]
+
+#ASK, put raw data into pandas DataFrame 
+data_ts = pd.DataFrame(data['HOURLYWETBULBTEMPC'].values)
+data_ts.columns = ["HOURLYWETBULBTEMPC"]
+data_ts['DATE'] = data.index.values
+data_ts.index = data.index.values
+
+#0908 AFTER viewwing acf/pacf plots you realize you need to difference the data then plot
+
+p = figure(plot_width = 1200, plot_height = 400, y_axis_label = "Returns", x_axis_label = "Date", x_axis_type = "datetime")
+p.line(data_ts.index.values[1:], np.diff (data_ts['HOURLYWETBULBTEMPC'])[1:])
+
+#show(p)
+
+#0908 what is nlags?
+acf, aint=st.acf(data_ts['HOURLYWETBULBTEMPC'], nlags=10, alpha=.05)
+
+p = figure(plot_width = 800, plot_height = 600)
+p.vbar(x = list(range (1, 11)), width = 0.5, top = acf[1:], bottom = 0)
+       
+
+#why is this done twice?     
+p.line(list(range(1,11)), [1/np.sqrt(len(data_ts))] *10, color = 'black', line_dash = "dashed")
+p.line(list(range(1,11)), [1/np.sqrt(len(data_ts))] *10, color = 'black', line_dash = "dashed")
+       
+#show(p)
+
+#According to Bokeh plot generated we can see the data is not stationary
+#0908 PACF next, check code on this, looks identical to acf plot
+#Why can't I get a differenced acf plot like in slides?
+
+pacf, paint=st.pacf(data_ts['HOURLYWETBULBTEMPC'], nlags=10, alpha=.05)
+
+p = figure(plot_width = 800, plot_height = 600)
+p.vbar(x = list(range (1, 11)), width = 0.5, top = acf[1:], bottom = 0)
+       
+
+#why is this done twice?     
+p.line(list(range(1,11)), [1/np.sqrt(len(data_ts))] *10, color = 'black', line_dash = "dashed")
+p.line(list(range(1,11)), [1/np.sqrt(len(data_ts))] *10, color = 'black', line_dash = "dashed")
+       
+#show(p)
+
+

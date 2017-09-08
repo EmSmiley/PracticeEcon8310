@@ -13,7 +13,10 @@ data = pd.read_csv("C:\\Users\\Emily\\Desktop\\omahaNOAA.csv")[-(365*24):]
 
 
 
-#ASK what these 3 lines mean
+#ASK what these 3 lines mean # The first is formatting the date time, lambda is a filler variable when you need to create a function. 
+                             # this lambda function takes the date from the data file and turns it into a year, a month, a day, an 
+                             # hour, a minute, a second. Then the next line drops any empty rows, and the third one tells the program
+                             # to treat the date field as the index of this data set.
 data['DATE'] = data['DATE'].apply(lambda x:
                            datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
 data = data.dropna()
@@ -28,23 +31,25 @@ data_ts.columns = ["HOURLYWETBULBTEMPC"]
 data_ts['DATE'] = data.index.values
 data_ts.index = data.index.values
 
-#0908 AFTER viewwing acf/pacf plots you realize you need to difference the data then plot
+#0908 AFTER viewwing acf/pacf plots you realize you need to difference the data then plot   #Were you able to view the acf/pacf plots?
 
 p = figure(plot_width = 1200, plot_height = 400, y_axis_label = "Returns", x_axis_label = "Date", x_axis_type = "datetime")
 p.line(data_ts.index.values[1:], np.diff (data_ts['HOURLYWETBULBTEMPC'])[1:])
 
 #show(p)
 
-#0908 what is nlags?
+#0908 what is nlags?  #number of lags, or past data points to compare for correlation. BUT how do we choose this number?
+                      # Is it based on the data we are working with or is 10 the standard number of lags?
 acf, aint=st.acf(data_ts['HOURLYWETBULBTEMPC'], nlags=10, alpha=.05)
 
 p = figure(plot_width = 800, plot_height = 600)
 p.vbar(x = list(range (1, 11)), width = 0.5, top = acf[1:], bottom = 0)
        
 
-#why is this done twice?     
+#why is this done twice?    #the second one should have a negative in front of the 1/... It is the upper and lower bounds
+                            # of the confidence interval
 p.line(list(range(1,11)), [1/np.sqrt(len(data_ts))] *10, color = 'black', line_dash = "dashed")
-p.line(list(range(1,11)), [1/np.sqrt(len(data_ts))] *10, color = 'black', line_dash = "dashed")
+p.line(list(range(1,11)), [-1/np.sqrt(len(data_ts))] *10, color = 'black', line_dash = "dashed")
        
 #show(p)
 

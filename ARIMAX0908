@@ -1,0 +1,58 @@
+#import the tools we need for datetime formatting, plotting, and creating ARIMA model
+import pandas as pd
+import numpy as np
+import patsy as pt
+from statsmodels.tsa.arima_model import ARIMA
+import statsmodels.tsa.stattools as st
+from bokeh.plotting import figure, show
+from datetime import datetime
+
+#import data
+data = pd.read_csv("C:\\Users\\Emily\\Desktop\\omahaNOAA.csv")[-(365*24):]
+
+
+
+
+#ASK what these 3 lines mean
+data['DATE'] = data['DATE'].apply(lambda x:
+                           datetime.strptime(x, '%Y-%m-%d %H:%M:%S'))
+data = data.dropna()
+data.index = data['DATE']
+
+#0908 remove 0 values from data
+data = data[data.HOURLYWETBULBTEMPC!=0]
+
+#ASK, put raw data into pandas DataFrame 
+data_ts = pd.DataFrame(data['HOURLYWETBULBTEMPC'].values)
+data_ts.columns = ["HOURLYWETBULBTEMPC"]
+data_ts['DATE'] = data.index.values
+data_ts.index = data.index.values
+
+#0908 difference our selected data twice because it is cyclical?
+data['HOURLYWETBULBTEMPC'] = data['HOURLYWETBULBTEMPC'].diff(periods=1)
+data['HOURLYWETBUBLTEMPC'] = data['HOURLYWETBULBTEMPC'].diff(periods=24)
+
+#0908 include exogenous variables
+eqn = "HOURLYWETBULBTEMPC ~ HOURLYWindSpeed + " + "HOURLYStationPressure + HOURLYPrecip"
+
+y, x = pt.dmatrices(eqn, data = data)
+
+#set plot parameters and plot
+p = figure(plot_width = 1200, plot_height= 400,
+          y_axis_label = "TEMP",
+          x_axis_label = "DATE",
+          x_axis_type="datetime")
+p.line(data_ts['DATE'], data_ts['HOURLYWETBULBTEMPC'])
+
+show(p)
+
+#0908 create ARIMA model with p,d,q = 1,1,1, ask what 'nc' 'mle' 'nm' are
+
+
+model = ARIMA(y, order=(1,1,0), exog=x)
+reg = model.fit(trend='nc', method='mle', maxiter=500, solver='nm')
+#ASK
+res = reg.resid
+
+reg.summary()
+#0908 Roots summary does not have values

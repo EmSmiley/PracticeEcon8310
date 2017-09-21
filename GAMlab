@@ -1,0 +1,20 @@
+import pandas as pd
+import numpy as np
+from fbprophet import Prophet
+
+data = pd.read_csv("C:/Users/Emily/Desktop/chicagoBusRiders.csv")
+route3 = data[data.route=='3'][['date', 'rides']]
+route3.date = pd.to_datetime(route3.date, infer_datetime_format=True)
+route3.columns = [['ds', 'y']]
+
+m = Prophet(changepoint_prior_scale=0.5)
+m.fit(route3)
+
+future = m.make_future_dataframe(periods=365)
+forecast = m.predict(future)
+
+plt = m.plot(forecast)
+plt.show()
+
+comp = m.plot_components(forecast)
+comp.show()

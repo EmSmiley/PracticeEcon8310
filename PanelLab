@@ -1,0 +1,21 @@
+import pandas as pd
+import numpy as np
+import statsmodels.formula.api as sm
+
+data = pd.read_excel("C:\\Users\\vdi-winuser\\Downloads\\wagePanelData.xlsx")
+#data.columns
+
+reg = sm.ols("""LWAGE ~ EXP + WKS +OCC + IND + SOUTH + SMSA + MS 
++ FEM + UNION + ED + BLK + C(ID) + TIME + I(TIME**2)""", 
+             data = data[data.TIME<7])
+fit = reg.fit().get_robustcov_results(cov_type='HC3')
+print(fit.summary())
+
+pred = fit.predict(data[data.TIME==7])
+truth = data.loc[data.TIME==7, "LWAGE"]
+errors = pred - truth
+pce = np.abs(errors/truth)*100
+
+print("Mean Squared Error: %s" % str(np.mean(errors**2)))
+print("Mean Absolute Error: %s" % str(np.mean(np.abs(errors))))
+print("Mean Absolute Percentage Error: %s" % str(np.mean(pce)))
